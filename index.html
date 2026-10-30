@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Eleitores aptos (TSE) e habitantes estimados (IBGE) em cada município da Bahia, com análise detalhada do perfil do eleitorado: idade, gênero, escolaridade, autodeclarações e locais de votação." />
+  <meta name="color-scheme" content="light dark" />
+  <title>Eleitorado × População · Bahia — TSE e IBGE 2026</title>
+  <link rel="icon" href="assets/img/favicon.png" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <link rel="stylesheet" href="assets/css/analise.css" />
+
+  <script>
+    (function () {
+      var salvo = null;
+      try { salvo = localStorage.getItem('eleitorado-ba-theme'); } catch (e) {}
+      document.documentElement.classList.toggle('theme-light', salvo !== 'dark');
+    })();
+  </script>
+  <script src="vendor/chart.umd.min.js" defer></script>
+  <script type="module" src="assets/js/main.js"></script>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <span class="header-eyebrow">AGIS T.I · Dados Públicos</span>
+      <h1 class="header-title">
+        <span class="title-accent">ELEITORADO</span><span class="title-dash">–</span><span class="title-rest">BAHIA</span>
+      </h1>
+      <p class="header-subtitle" id="header-subtitle">ELEITORES × HABITANTES POR MUNICÍPIO</p>
+      <div class="header-rule"></div>
+      <nav class="header-nav">
+        <button class="btn-theme" id="btn-theme" type="button">☀ Claro</button>
+        <button class="header-nav-btn" id="btn-sobre" aria-expanded="false">Sobre o Projeto</button>
+      </nav>
+    </div>
+
+    <div class="header-about" id="header-about" aria-hidden="true">
+      <div class="header-about-inner">
+        <h2 class="about-title">Sobre o Projeto</h2>
+        <p>
+          Uma iniciativa do <strong>AGIS T.I</strong> para controle social. Aqui o eleitorado registrado pelo
+          <strong>Tribunal Superior Eleitoral (TSE)</strong> é colocado ao lado da população estimada pelo
+          <strong>IBGE</strong> em cada um dos 417 municípios da Bahia.
+        </p>
+        <p>
+          A comparação mostra quantos eleitores há para cada 100 habitantes. Em alguns municípios o cadastro eleitoral
+          supera a população estimada — o que pede atenção e contexto, não conclusões apressadas: domicílio eleitoral
+          não é o mesmo que residência, e a estimativa do IBGE também tem margem.
+        </p>
+        <p>
+          A <strong>Análise Detalhada</strong> abre o perfil do eleitorado de qualquer município, porte ou do estado inteiro:
+          faixa etária, gênero, estado civil, escolaridade, autodeclarações, biometria e locais de votação.
+        </p>
+        <p>
+          Os dados são os mesmos publicados oficialmente; esta página apenas os organiza.
+          Contato: <strong>atendimento@projetoagis.com</strong>.
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toolbar" id="toolbar" aria-label="Você está em" hidden>
+    <div class="toolbar-inner">
+      <ol class="crumbs">
+        <li><a href="#" id="crumb-home">← Início</a></li>
+        <li class="crumb-atual" id="crumb-atual"></li>
+      </ol>
+    </div>
+  </nav>
+
+  <main>
+
+    <section class="mode-view" id="view-inicio">
+      <p class="intro">
+        Habitantes estimados pelo <a data-fonte="ibge" href="#" target="_blank" rel="noopener noreferrer">IBGE</a> (1º de julho de 2026)
+        e eleitores aptos do <a data-fonte="tse" href="#" target="_blank" rel="noopener noreferrer">TSE</a>
+        (cadastro de <span data-tse-data></span>) em cada município da Bahia. Clique no nome do município para ver o perfil completo.
+      </p>
+
+      <div id="mun-area">
+        <div class="summary-grid" id="mun-resumo"></div>
+
+        <div class="filter-section">
+          <div class="filter-header">
+            <span class="filter-title">Filtros</span>
+            <span class="filter-status" id="mun-status"></span>
+            <button class="btn-clear-filters" id="mun-limpar" type="button" hidden>&#10005; Limpar filtros</button>
+          </div>
+          <div class="filter-grid">
+            <div class="filter-field">
+              <label class="filter-label" for="mun-busca">Município</label>
+              <input type="search" id="mun-busca" class="filter-input" placeholder="Nome ou código IBGE..." autocomplete="off" />
+            </div>
+            <div class="filter-field">
+              <label class="filter-label" for="mun-faixa">Eleitores / Habitantes</label>
+              <select id="mun-faixa" class="filter-select"></select>
+            </div>
+            <div class="filter-field">
+              <label class="filter-label" for="mun-porte">Porte</label>
+              <select id="mun-porte" class="filter-select"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="acoes">
+          <span class="table-info" id="mun-info"></span>
+          <div class="acoes-dir">
+            <div class="pagination" id="mun-pag-top">
+              <button class="btn-page" id="mun-prev-top" type="button">&#8592; Anterior</button>
+              <span class="page-indicator" id="mun-page-top"></span>
+              <button class="btn-page" id="mun-next-top" type="button">Próxima &#8594;</button>
+            </div>
+            <select id="mun-por-pagina" class="filter-select select-curto" aria-label="Linhas por página">
+              <option value="50">50 por página</option>
+              <option value="100">100 por página</option>
+              <option value="0">Todos</option>
+            </select>
+            <button class="btn-ghost" id="mun-csv" type="button">&#8681; Exportar CSV</button>
+            <a class="btn-primario" href="#analise">Análise Detalhada</a>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead id="mun-head"></thead>
+            <tbody id="mun-body"></tbody>
+            <tfoot id="mun-foot"></tfoot>
+          </table>
+        </div>
+
+        <div class="tb-pag">
+          <div class="pagination" id="mun-pag-bot">
+            <button class="btn-page" id="mun-prev-bot" type="button">&#8592; Anterior</button>
+            <span class="page-indicator" id="mun-page-bot"></span>
+            <button class="btn-page" id="mun-next-bot" type="button">Próxima &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="nota">
+        <h3>Como ler</h3>
+        <ul>
+          <li><strong>Eleitores / Habitantes</strong> = eleitores aptos ÷ população estimada. A marca na barra indica 100%; acima dela (▲, em vermelho) o município tem mais eleitores cadastrados que habitantes estimados.</li>
+          <li>A população inclui crianças e adolescentes que não votam; por isso a razão costuma ficar abaixo de 100%.</li>
+          <li>Razão alta pode vir de domicílio eleitoral diferente da residência (quem estuda ou trabalha fora e mantém o título na cidade de origem), de cadastro desatualizado ou da própria margem da estimativa. É um indicador para investigar, não uma prova.</li>
+          <li>Os municípios do TSE e do IBGE foram casados pelo nome padronizado (sem acentos, pontuação, traços e apóstrofos): os 417 casaram.</li>
+        </ul>
+      </aside>
+    </section>
+
+    <section class="mode-view" id="view-analise" hidden>
+      <div class="filter-section">
+        <div class="filter-header">
+          <span class="filter-title">Recorte</span>
+        </div>
+        <div class="filter-grid">
+          <div class="filter-field">
+            <label class="filter-label" for="an-recorte">Município, porte ou estado</label>
+            <select id="an-recorte" class="filter-select"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="an-recorte" id="an-cab"></div>
+      <div class="summary-grid" id="an-cards"></div>
+      <nav class="an-abas" id="an-abas" role="tablist" aria-label="Análises"></nav>
+      <div id="an-corpo"></div>
+
+      <aside class="nota">
+        <h3>Fontes e observações</h3>
+        <ul>
+          <li><a data-fonte="tse" href="#" target="_blank" rel="noopener noreferrer">TSE — Perfil do eleitorado por seção eleitoral 2026</a>, cadastro de <span data-tse-data></span>. Eleitores aptos, por seção, com gênero, estado civil, faixa etária, escolaridade e autodeclarações.</li>
+          <li><a data-fonte="ibge" href="#" target="_blank" rel="noopener noreferrer">IBGE — Estimativas da população residente</a>, referência 1º de julho de 2026, publicadas no DOU.</li>
+          <li>Estado civil e escolaridade são os declarados no alistamento e podem estar desatualizados.</li>
+          <li>Recortes por porte somam os municípios da faixa de população; a comparação "Bahia" usa o estado inteiro.</li>
+        </ul>
+      </aside>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>
+      Dúvidas? Envie um e-mail para
+      <a href="mailto:atendimento@projetoagis.com">atendimento@projetoagis.com</a>
+    </p>
+    <p class="footer-line2">
+      ELEITORADO · AGIS T.I · DADOS PÚBLICOS · TSE · IBGE
+    </p>
+  </footer>
+
+</body>
+</html>
